@@ -50,7 +50,7 @@ if [ "$1" == "-python" ] ; then
         if [ -z "$3" ]; then
             /s/chopin/f/proj/helios/softwares/Python-3.6.4/python Helios.py -h
         else
-            /s/chopin/f/proj/helios/softwares/Python-3.6.4/python Helios.py $3 $4 $5 $6 $7 $8 $9 $10 $11 $12 $13 $14 $15        
+            /s/chopin/f/proj/helios/softwares/Python-3.6.4/python Helios.py $3 $4 $5 $6 $7 $8 $9 $a $b $c $d $e &
         fi
     fi
 fi
