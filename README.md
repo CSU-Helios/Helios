@@ -9,4 +9,4 @@ $ umask 007
 
 3. The MongoDB instance is running on "dover"
 
-4. **Accept invitation as group members, instead of collaborator to make sure you all have permissions such as merge request. **
+4. **Accept invitation as group members, instead of collaborator to make sure you all have permissions such as merge request.**
