@@ -1,4 +1,3 @@
-
 import pymongo
 import pprint
 import urllib.request
@@ -25,11 +24,12 @@ class Helios:
         self.colName = "Helios_Traffic_Data"
         self.primaryKey = "incidentId"
         self.logfileName = "./log/Helios_Traffic_Data_Log-" + time.ctime().replace(" ", "-") + ".log"
+        self.citiesFileName = "./resources/cities.json"
         self.__base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
         
         # Coordinates are more or less centered on Denver
         # (southLatitude, westLongitude, northLatitude, eastLongitude)
-        self.loc = (35, -115, 45, -95)
+        self.loc = "denver"
         self.log = False
         
         
@@ -44,11 +44,8 @@ class Helios:
             confirm (bool, optional): Double Confirm when firstTimeSetUp
         """
 
-        # TODO add loc para
-
         self.__cons_Names()
-        
-        self.loadBingAPI(self.loc)
+
         self.connectMongoDB(self.host, self.port)
         
         if firstTimeSetUp:
@@ -202,14 +199,42 @@ class Helios:
         else:
             self.col.insert_one(json).inserted_id
             return True
+        
+    def getQueryBox(self, location):
+        """
+        Generate a query box around a location by 6 degrees (500km maximum)
+        Args:
+            location (tuple, optional): central (longitude, latitude)
+            location (String, optional): pull location coordinates from existing file
+        """
+        longitude, latitude = 0, 0
+        if isinstance(location, tuple):
+            longitude, latitude = location
+        else: 
+            cities = json.load(open(self.citiesFileName))
+            cityNames = [city["city"].lower() for city in cities]
+            if location.lower() in cityNames:
+                idx = cityNames.index(location.lower())
+                longitude = int(cities[idx]["longitude"])
+                latitude = int(cities[idx]["latitude"])
+            else:
+                raise Exception("Could not recognize city name")
+        return (latitude - 3, longitude - 3, latitude + 3, longitude + 3)
     
-    def loadMapData(self, verbose = False, printWait = None):
+    def loadMapData(self, verbose = False, printWait = None, location = None):
         """
         Load Traffic Data from Bing Map API once
         Args:
             verbose (bool, optional): print record details
             printWait (int, optional): pause seconds when printing each record
+            location (tuple): the location box for querying
         """
+
+        if not location:
+            self.loadBingAPI(self.getQueryBox(self.loc))
+        else:
+            self.loadBingAPI(self.getQueryBox(location))
+
         res = self.queryBingMap(self.url)
         for re in res['resourceSets'][0]['resources']:
             names = ['point', 'toPoint']
@@ -217,7 +242,7 @@ class Helios:
                 if name in re:
                     re[name]['geohash'] = self.encode(re[name]['coordinates'][0], re[name]['coordinates'][1])
             if self.safeInsert(re):
-                if verbose:
+                if verbose is True:
                     if printWait:
                         time.sleep(printWait)
                     pprint.pprint(re)
@@ -260,7 +285,7 @@ class Helios:
                 ch = 0
         return ''.join(geohash)
     
-    def autoLoading(self, length = 1800, session = 10, verbose = False, printWait = None):
+    def autoLoading(self, length = 1800, session = 10, verbose = False, printWait = None, location = None):
         """
         Load Traffic Data from Bing Map API periodically
         DEFAULT: update collection every half an hour, last 5 hours
@@ -269,9 +294,10 @@ class Helios:
             session (int, optional): # of tries to query data from Bing Map API
             verbose (bool, optional): print record details
             printWait (None, optional): pause seconds when printing each record
+            location (tuple, optional): the location box for querying
         """
         while session > 0:
-            self.loadMapData(verbose, printWait)
+            self.loadMapData(verbose, printWait, location)
             time.sleep(length)
             session -= 1
 
@@ -324,12 +350,14 @@ if __name__ == "__main__":
                     dest = "printWait", default = 5, type = int, \
                     help = "# of seconds pause for displaying traffic details")
 
+     parser.add_argument("-location", "-loc", \
+                    dest = "location", default = "denver", type = str, \
+                    help = "the location for querying, could be tuple (latitude, longitude) or city name")
+
     args = parser.parse_args()
     
     helios = Helios(args.firstTimeSetUp, args.confirm, args.log)
     if args.loadMapData:
-        helios.loadMapData(args.verbose, args.printWait)
+        helios.loadMapData(args.verbose, args.printWait, args.location)
     if args.autoLoading:
-        helios.autoLoading(args.length, args.session, args.verbose, args.printWait)
-
-
+        helios.autoLoading(args.length, args.session, args.verbose, args.printWait, args.location)
