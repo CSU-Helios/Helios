@@ -15,14 +15,14 @@ fi
 	
 if [ "$1" == "-mongod" ] ; then
     if [ "$2" == "-start" ] ; then
-        /s/chopin/f/proj/helios/mongodb-linux-x86_64-3.6.2/bin/mongod -dbpath /s/chopin/f/proj/helios/data/db --logpath /s/chopin/f/proj/helios/log/mongodb.log &
+        /s/chopin/f/proj/helios/softwares/mongodb-linux-x86_64-3.6.2/bin/mongod -dbpath /s/chopin/f/proj/helios/data/db --logpath /s/chopin/f/proj/helios/log/mongodb.log &
         echo -e "******************************************************************************************"
         echo -e "Starting mongod at PORT 27017, dbpath=/data/db, logpath=log/mongodb.log 64-bit"
         echo -e "******************************************************************************************"
     fi
 
     if [ "$2" == "-stop" ] ; then
-        /s/chopin/f/proj/helios/mongodb-linux-x86_64-3.6.2/bin/mongod --shutdown
+        /s/chopin/f/proj/helios/softwares/mongodb-linux-x86_64-3.6.2/bin/mongod --shutdown
         echo -e "******************************************************************************************"
         echo -e "Stopping Mongod"
         echo -e "******************************************************************************************"
