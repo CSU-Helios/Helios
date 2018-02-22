@@ -5,6 +5,7 @@ import json
 import time
 import sys
 import argparse
+from ast import literal_eval as make_tuple
 
 class Helios:
 
@@ -208,9 +209,9 @@ class Helios:
             location (String, optional): pull location coordinates from existing file
         """
         longitude, latitude = 0, 0
-        if isinstance(location, tuple):
-            longitude, latitude = location
-        else: 
+        try:
+            longitude, latitude = make_tuple(location)
+        except ValueError: 
             cities = json.load(open(self.citiesFileName))
             cityNames = [city["city"].lower() for city in cities]
             if location.lower() in cityNames:
