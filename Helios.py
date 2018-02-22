@@ -350,7 +350,7 @@ if __name__ == "__main__":
                     dest = "printWait", default = 5, type = int, \
                     help = "# of seconds pause for displaying traffic details")
 
-     parser.add_argument("-location", "-loc", \
+    parser.add_argument("-location", "-loc", \
                     dest = "location", default = "denver", type = str, \
                     help = "the location for querying, could be tuple (latitude, longitude) or city name")
 
