@@ -15,14 +15,14 @@ fi
 	
 if [ "$1" == "-mongod" ] ; then
     if [ "$2" == "-start" ] ; then
-        /s/chopin/f/proj/helios/softwares/mongodb-linux-x86_64-3.6.2/bin/mongod -dbpath /s/chopin/f/proj/helios/data/db --logpath /s/chopin/f/proj/helios/log/mongodb.log &
+        softwares/mongodb-linux-x86_64-3.6.2/bin/mongod -dbpath data/db --logpath log/mongodb.log &
         echo -e "******************************************************************************************"
         echo -e "Starting mongod at PORT 27017, dbpath=/data/db, logpath=log/mongodb.log 64-bit"
         echo -e "******************************************************************************************"
     fi
 
     if [ "$2" == "-stop" ] ; then
-        /s/chopin/f/proj/helios/softwares/mongodb-linux-x86_64-3.6.2/bin/mongod --shutdown
+        softwares/mongodb-linux-x86_64-3.6.2/bin/mongod --shutdown
         echo -e "******************************************************************************************"
         echo -e "Stopping Mongod"
         echo -e "******************************************************************************************"
@@ -43,14 +43,14 @@ fi
 
 if [ "$1" == "-python" ] ; then
     if [ "$2" == "-start" ] ; then
-        /s/chopin/f/proj/helios/softwares/Python-3.6.4/python   
+        softwares/Python-3.6.4/python   
     fi
 	
     if [ "$2" == "-Helios" ] ; then
         if [ -z "$3" ]; then
-            /s/chopin/f/proj/helios/softwares/Python-3.6.4/python Helios.py -h
+            softwares/Python-3.6.4/python Helios.py -h
         else
-            /s/chopin/f/proj/helios/softwares/Python-3.6.4/python Helios.py $3 $4 $5 $6 $7 $8 $9 $a $b $c $d $e
+            softwares/Python-3.6.4/python Helios.py $3 $4 $5 $6 $7 $8 $9 $a $b $c $d $e
         fi
     fi
 fi
