@@ -250,7 +250,7 @@ class Helios:
                 if self.log:
                     self.logfile.write(pprint.pformat(re))
 
-    def encode(self, latitidue, longitude, precision=12):
+    def encode(self, latitude, longitude, precision=12):
         """
         Taken from: https://github.com/vinsci/geohash
         Encode a position given in float arguments latitude, longitude to
