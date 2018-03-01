@@ -243,6 +243,7 @@ class Helios:
             for name in names:
                 if name in re:
                     re[name]['geohash'] = self.encode(re[name]['coordinates'][0], re[name]['coordinates'][1])
+                    re[name]['coordinates'] = re['point']['coordinates'][::-1]
             if self.safeInsert(re):
                 if verbose is True:
                     if printWait:
