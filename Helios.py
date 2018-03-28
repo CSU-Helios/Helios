@@ -237,12 +237,11 @@ class Helios:
 
         res = self.queryBingMap(self.url)
         for re in res['resourceSets'][0]['resources']:
-            re['point']['coordinates'] = re['point']['coordinates'][::-1]
-            re['toPoint']['coordinates'] = re['toPoint']['coordinates'][::-1]
             names = ['point', 'toPoint']
             for name in names:
                 if name in re:
                     re[name]['geohash'] = self.encode(re[name]['coordinates'][0], re[name]['coordinates'][1])
+                    re[name]['coordinates'] = re['point']['coordinates'][::-1]
             if self.safeInsert(re):
                 if verbose is True:
                     if printWait:
@@ -251,7 +250,7 @@ class Helios:
                 if self.log:
                     self.logfile.write(pprint.pformat(re))
 
-    def encode(self, longitude, latitude, precision=12):
+    def encode(self, latitude, longitude, precision=12):
         """
         Taken from: https://github.com/vinsci/geohash
         Encode a position given in float arguments latitude, longitude to
