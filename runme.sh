@@ -15,14 +15,14 @@ fi
 	
 if [ "$1" == "-mongod" ] ; then
     if [ "$2" == "-start" ] ; then
-        softwares/mongodb-linux-x86_64-3.6.2/bin/mongod -dbpath data/db --logpath log/mongodb.log &
+        softwares/mongodb-osx-x86_64-3.6.2/bin/mongod -dbpath data/db --logpath log/mongodb.log &
         echo -e "******************************************************************************************"
         echo -e "Starting mongod at PORT 27017, dbpath=/data/db, logpath=log/mongodb.log 64-bit"
         echo -e "******************************************************************************************"
     fi
 
     if [ "$2" == "-stop" ] ; then
-        softwares/mongodb-linux-x86_64-3.6.2/bin/mongod --shutdown
+        softwares/mongodb-osx-x86_64-3.6.2/bin/mongod --shutdown
         echo -e "******************************************************************************************"
         echo -e "Stopping Mongod"
         echo -e "******************************************************************************************"
@@ -50,7 +50,8 @@ if [ "$1" == "-python" ] ; then
         if [ -z "$3" ]; then
             softwares/Python-3.6.4/python Helios.py -h
         else
-            softwares/Python-3.6.4/python Helios.py $3 $4 $5 $6 $7 $8 $9 $a $b $c $d $e
+            # softwares/Python-3.6.4/python Helios.py $3 $4 $5 $6 $7 $8 $9 $a $b $c $d $e
+            python Helios.py $3 $4 $5 $6 $7 $8 $9 $a $b $c $d $e
         fi
     fi
 fi
