@@ -239,11 +239,6 @@ class Helios:
 
         res = self.queryBingMap(self.url)
         for re in res['resourceSets'][0]['resources']:
-            names = ['point', 'toPoint']
-            for name in names:
-                if name in re:
-                    re[name]['geohash'] = self.encode(re[name]['coordinates'][0], re[name]['coordinates'][1])
-                    re[name]['coordinates'] = re['point']['coordinates'][::-1]
             if self.safeInsert(re):
                 if verbose is True:
                     if printWait:
