@@ -15,14 +15,14 @@ fi
 	
 if [ "$1" == "-mongod" ] ; then
     if [ "$2" == "-start" ] ; then
-        softwares/mongodb-osx-x86_64-3.6.2/bin/mongod -dbpath data/db --logpath log/mongodb.log &
+        softwares/mongodb-*-x86_64-3.6.2/bin/mongod -dbpath data/db --logpath log/mongodb.log &
         echo -e "******************************************************************************************"
         echo -e "Starting mongod at PORT 27017, dbpath=/data/db, logpath=log/mongodb.log 64-bit"
         echo -e "******************************************************************************************"
     fi
 
     if [ "$2" == "-stop" ] ; then
-        softwares/mongodb-osx-x86_64-3.6.2/bin/mongod --shutdown
+        softwares/mongodb-*-x86_64-3.6.2/bin/mongod --shutdown
         echo -e "******************************************************************************************"
         echo -e "Stopping Mongod"
         echo -e "******************************************************************************************"
