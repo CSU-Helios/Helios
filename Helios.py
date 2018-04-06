@@ -1,5 +1,3 @@
-"""Summary
-"""
 import pymongo
 import pprint
 import urllib.request
@@ -45,9 +43,9 @@ class Helios:
         Args:
             firstTimeSetUp (bool, optional): Set up Helios MongoDB for the first time
             confirm (bool, optional): Double Confirm when firstTimeSetUp
-            log (bool, optional): Description
-            dbName (None, optional): Description
-            colName (None, optional): Description
+            log (bool, optional): store log file into ./log
+            dbName (None, optional): specify database name to be connected
+            colName (None, optional): specify collection name to be connected
         """
 
         self._cons_Names()
@@ -73,8 +71,6 @@ class Helios:
             self.logfile = open(self.logfileName, "w")
 
     def __del__(self):
-        """Summary
-        """
         if self.log:
             self.logfile.close()
             
@@ -191,7 +187,7 @@ class Helios:
         
         Returns:
             TYPE: list
-            https: //msdn.microsoft.com/en-us/library/hh441730.aspx
+            https://msdn.microsoft.com/en-us/library/hh441730.aspx
         """
         if not url:
             url = self.url
@@ -366,36 +362,36 @@ if __name__ == "__main__":
                     dest = 'log', \
                     help = 'store log file into ./log')
 
-    parser.add_argument('-ld', "-load", action = 'store_true', default = False, \
+    parser.add_argument('-ld', '-load', action = 'store_true', default = False, \
                     dest = 'loadMapData', \
                     help = 'Load Traffic Data from Bing Map API once')
 
-    parser.add_argument('-al', "-autoload", action = 'store_true', default = False, \
+    parser.add_argument('-al', '-autoload', action = 'store_true', default = False, \
                     dest = 'autoLoading', \
                     help = 'Load Traffic Data from Bing Map API periodically')
 
-    parser.add_argument("-length", "-l", \
-                    dest = "length", default = 1800, type = int, \
-                    help = "# of seconds pause for each query fetch")
+    parser.add_argument('-length', '-l', \
+                    dest = 'length', default = 1800, type = int, \
+                    help = '# of seconds pause for each query fetch')
 
-    parser.add_argument("-session", "-s", \
-                    dest = "session", default = 10, type = int, \
-                    help = "# of fetches to query data from Bing Map API")
+    parser.add_argument('-session', '-s', \
+                    dest = 'session', default = 10, type = int, \
+                    help = '# of fetches to query data from Bing Map API')
 
-    parser.add_argument("-printwait", "-p", \
-                    dest = "printWait", default = 5, type = int, \
-                    help = "# of seconds pause for displaying traffic details")
+    parser.add_argument('-printwait', '-p', \
+                    dest = 'printWait', default = 5, type = int, \
+                    help = '# of seconds pause for displaying traffic details')
 
-    parser.add_argument("-location", "-loc", \
-                    dest = "location", default = "denver", type = str, \
-                    help = "The location for querying, could be tuple (latitude, longitude) or city name")
+    parser.add_argument('-location', '-loc', \
+                    dest = 'location', default = 'denver', type = str, \
+                    help = 'The location for querying, could be tuple (latitude, longitude) or city name')
 
-    parser.add_argument("-dbName", "-db", \
-                    dest = "dbName", default = "Helios", type = str, \
-                    help = "Database name for querying")
+    parser.add_argument('-dbName', '-db', \
+                    dest = 'dbName', default = 'Helios', type = str, \
+                    help = 'Database name for querying')
 
-    parser.add_argument("-colName", "-col", \
-                    dest = "colName", default = "TrafficData", type = str, \
+    parser.add_argument('-colName', '-col', \
+                    dest = 'colName', default = 'TrafficData', type = str, \
                     help = 'Collection name for querying')
 
     args = parser.parse_args()
