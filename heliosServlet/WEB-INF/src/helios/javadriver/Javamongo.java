@@ -30,9 +30,9 @@ import javax.json.JsonValue;
 import javax.json.JsonString;
 
 public class Javamongo{
-	private final static String databaseName = "Helios_Test";
+	private final static String databaseName = "Helios";
 
-	private final static String collectionName = "Server_Test";
+	private final static String collectionName = "TrafficData";
 
 	private final static String hostPort = "localhost:27017";
 	
