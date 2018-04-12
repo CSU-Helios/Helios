@@ -20,7 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import helios.javadriver.Javamongo;
 
  
-@WebServlet("/helios")
+@WebServlet("/")
 public class HeliosServlet extends HttpServlet {
 
 	private Javamongo javamongo;
@@ -85,14 +85,12 @@ public class HeliosServlet extends HttpServlet {
 	 * Initialize a JavaMongo talking to a specific hostPort, database, and collection.
 	 * @param spec (JsonObject) specifications 
 	 *             - (String) hostPort: hostPort for mongod server, default is 27017
-	 *             - (String) dbName: database name where to query the data from, default is Helios_Test
-	 *             - (String) colName: collection name where to query the data from, default is Server_Test
+	 *             - (String) dbName: database name where to query the data from, default is Helios
+	 *             - (String) colName: collection name where to query the data from, default is TrafficData
 	 */
 	private void connectToJavaMongo(JsonObject spec) {
-		String hostPort = spec.getString("hostPort", "localhost:27017");
-		String dbName = spec.getString("dbName", "Helios_Test");
-		String colName = spec.getString("colName", "Server_Test");
-		javamongo = new Javamongo(hostPort, dbName, colName);
+		javamongo = new Javamongo();
+		javamongo.setup(spec);
 	}
 
 	private void populateWithJson(HttpServletResponse response, JsonValue jval) {
