@@ -1,8 +1,10 @@
 from datetime import datetime
 import numpy as np
-import Helios
+import random
+import json
 from sklearn.ensemble import RandomForestClassifier
 
+import Helios
 
 class Helios_RFC:
 
@@ -39,9 +41,22 @@ class Helios_RFC:
             today = datetime.utcnow().date()
             prediction_time = datetime(today.year, today.month, today.day, hour)
         for loc_num in self.locations:
-            predictions.append(
-                [self.locations[loc_num], self.time_to_millis(prediction_time), self._predict(loc_num, hour)])
+            s = "/Date" + str(self.time_to_millis(prediction_time)) + ")/"
+            prediction = {
+                'incidentId': int(random.random() * 10000000),
+                'point': self.locations[loc_num],
+                'toPoint': self.locations[loc_num],
+                'start': s,
+                'severity': int(self._predict(loc_num, hour)),  # number of incidents at geohash
+                'projection': True,
+            }
+            predictions.append(prediction)
         return predictions
+
+    def send_predictions_to_mongo(self, predictions):
+        self.log("send_predictions_to mongo" + "First prediction:" + str(predictions[0]))
+        for prediction in predictions:
+            self.helios.safeInsert(json.loads(json.dumps(prediction)))
     
     def _get_loc_set(self):
         """
@@ -91,7 +106,7 @@ class Helios_RFC:
         self.log("_get_db_data")
 
         data = []
-        cursor = self.helios.col.find()
+        cursor = self.helios.col.find({"projection": {"$exists": False}})
         for entry in cursor:
             element = {
                 'start': self.millis_to_time(int(entry['start'][6:-2])),
@@ -143,8 +158,10 @@ class Helios_RFC:
 if __name__ == "__main__":
     p = Helios_RFC()
     p.train()
-    print("test prediction: " + str(p.predict_all_at_specified_time(8)[0]))
+    idata = p.predict_all_at_specified_time(8)
+    print("test prediction: " + str(idata[0]))
 
+    p.send_predictions_to_mongo(idata)
     
 
 
