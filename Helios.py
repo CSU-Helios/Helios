@@ -15,14 +15,14 @@ class Helios:
         2. Retrieve traffic data from Bing Map API
     """
     
-    def __cons_Names(self):
+    def _cons_Names(self):
         """
         All constant valuables assignments
         """
         self.host = "localhost"
         self.port = 27017
-        self.dbName = "Helios_Test"
-        self.colName = "Helios_Traffic_Data"
+        self.dbName = "Helios"
+        self.colName = "TrafficData"
         self.primaryKey = "incidentId"
         self.logfileName = "./log/Helios_Traffic_Data_Log-" + time.ctime().replace(" ", "-") + ".log"
         self.citiesFileName = "./resources/cities.json"
@@ -34,32 +34,38 @@ class Helios:
         self.log = False
         
         
-    def __init__(self, firstTimeSetUp = False, confirm = False, log = False):
+    def __init__(self, firstTimeSetUp=False, confirm=False, log=False, dbName=None, colName=None):
         """
         Initiation, including load constant names, connect to Bing Map API,
         connect to an openning MongoDB, connect to Mongod database, 
         connect to Mongod collection
         If firstTimeSetUp, it will clean the existing database, named self.dbName
+        
         Args:
             firstTimeSetUp (bool, optional): Set up Helios MongoDB for the first time
             confirm (bool, optional): Double Confirm when firstTimeSetUp
+            log (bool, optional): store log file into ./log
+            dbName (None, optional): specify database name to be connected
+            colName (None, optional): specify collection name to be connected
         """
 
-        self.__cons_Names()
+        self._cons_Names()
 
-        self.connectMongoDB(self.host, self.port)
+        self._connectMongoDB(self.host, self.port)
         
         if firstTimeSetUp:
             if confirm:
-                self.__cleanUpDatabase(self.dbName, confirm)
+                self._cleanUpDatabase(self.dbName, confirm)
             else: print("ERROR: Not cleanning up database, please specific 'confirm'")
             
             
-        self.connectDatabase(self.dbName)
-        self.connectCollection(self.colName)
-        
+        if dbName is None: self._connectDatabase(self.dbName)
+        else: self._connectDatabase(dbName)
+        if colName is None: self._connectCollection(self.colName)
+        else: self._connectCollection(colName)
+
         if firstTimeSetUp:
-            self.mongoColConf(self.primaryKey)
+            self._mongoColConf(self.primaryKey)
 
         if log:
             self.log = True
@@ -69,9 +75,10 @@ class Helios:
         if self.log:
             self.logfile.close()
             
-    def loadBingAPI(self, location):
+    def _loadBingAPI(self, location):
         """
         Using Bing Map Key and Query to build connection with Bing Map API
+        
         Args:
             location (Tuple): Location specific where BING API retrieve traffic data from
         """
@@ -86,36 +93,42 @@ class Helios:
                     + "/true?s=1,2,3,4&t=1,2,3,4,5,6,7,8,9,10,11&key=" \
                     + self.key
         
-    def connectMongoDB(self, host, port):
+    def _connectMongoDB(self, host, port):
         """
         Connect to MongoD and create a client instance
+        
         Args:
             host (String): the host Mongod used
             port (Int): the port Mongod listened
         """
         self.client = pymongo.MongoClient(host, port)
         
-    def connectDatabase(self, datebase):
+    def _connectDatabase(self, datebase):
         """
         Connect to MongoD client and open a database instance
+        
         Args:
             datebase (String): The database name for Helios
         """
         self.db = self.client[datebase]
+        print("Connected to Database", datebase)
     
-    def connectCollection(self, collection):
+    def _connectCollection(self, collection):
         """
         Connect to MongoD database and open a collection instance
+        
         Args:
             collection (String): The collection name for Helios
         """
         self.col = self.db[collection]
+        print("Connected to Collection", collection)
         
-    def __cleanUpDatabase(self, databaseName = None, confirm = False):
+    def _cleanUpDatabase(self, databaseName=None, confirm=False):
         """
         !DANGEROUS
         Cleaning up / Removing all the database instances in Mongod
         PRIVATE METHOD
+        
         Args:
             databaseName (String, optional): The database name for Helios
             confirm (bool, optional): Double Confirm
@@ -126,14 +139,19 @@ class Helios:
                     self.client.drop_database(name)
             else:
                 self.client.drop_database(databaseName)
+        print("Cleaned up Database", databaseName)
                 
-    def __cleanUpCollection(self, collectionName = None, confirm = False):
+    def _cleanUpCollection(self, collectionName=None, confirm=False):
         """
         !DANGEROUS
         Cleaning up / Removing all the collection instances in Mongod
         PRIVATE METHOD
+        
         Args:
             collectionName (String, optional): The collection name for Helios
+            confirm (bool, optional): Description
+        
+        Deleted Parameters:
             Confirm (bool, optional): Double Confirm
         """
         if confirm:
@@ -142,13 +160,15 @@ class Helios:
                     self.db.drop_collection(name)
             else:
                 self.db.drop_collection(collectionName)
+        print("Cleaned up Database", collectionName)
     
 
-    def mongoColConf(self, primaryKey):
+    def _mongoColConf(self, primaryKey):
         """
         CAUTION: This Method should be called only ONCE
         Construct the initial configuration of Helios Data Collection
         More configuration can be added through MongoShell or Pymongo
+        
         Args:
             primaryKey (String): The primary key for Helios Traffic Collection
         """
@@ -158,24 +178,17 @@ class Helios:
         # create primary key "incidentId"
         self.col.create_index([(primaryKey, pymongo.ASCENDING)], unique=True)
     
-    def cleanUpCollection(self, confirm = False):
-        """
-        !DANGEROUS
-        Available public method for cleanning up collections
-        Args:
-            confirm (bool, optional): Double Confirm
-        """
-        self.__cleanUpCollection(self.colName, confirm)
-    
-    def queryBingMap(self, url = None):
+    def _queryBingMap(self, url=None):
         """
         Query Bing Map API and retrieve data
         [https://msdn.microsoft.com/en-us/library/hh441726.aspx]
+        
         Args:
             url (String, optional): Query URL
+        
         Returns:
             TYPE: list
-            [https://msdn.microsoft.com/en-us/library/hh441730.aspx]
+            https://msdn.microsoft.com/en-us/library/hh441730.aspx
         """
         if not url:
             url = self.url
@@ -185,9 +198,10 @@ class Helios:
         text = response.read().decode(encoding="utf-8")
         return json.loads(text)
     
-    def safeInsert(self, json):
+    def _safeInsert(self, json):
         """
         Insert One JSON formated record if there is no primary key confliction
+        
         Args:
             json (json): one json formated record
         
@@ -201,12 +215,15 @@ class Helios:
             self.col.insert_one(json).inserted_id
             return True
         
-    def getQueryBox(self, location):
+    def _getQueryBox(self, location):
         """
         Generate a query box around a location by 6 degrees (500km maximum)
+        
         Args:
-            location (tuple, optional): central (longitude, latitude)
             location (String, optional): pull location coordinates from existing file
+        
+        Returns:
+            locationBox (LeftLat, BotLong, RightLat, TopLong)
         """
         longitude, latitude = 0, 0
         try:
@@ -222,32 +239,21 @@ class Helios:
             else:
                 raise Exception("Could not recognize city name")
         return (latitude - 3, longitude - 3, latitude + 3, longitude + 3)
-    
-    def loadMapData(self, verbose = False, printWait = None, location = None):
+
+    def _modifyRecord(self, record):
         """
-        Load Traffic Data from Bing Map API once
+            Modify the record as necessary
+            1. Add geohash tag inside [Point] and [toPoint] tags based on the lat/long
+        
         Args:
-            verbose (bool, optional): print record details
-            printWait (int, optional): pause seconds when printing each record
-            location (tuple): the location box for querying
+            record (String): A modified Json String based on original data
         """
-
-        if not location:
-            self.loadBingAPI(self.getQueryBox(self.loc))
-        else:
-            self.loadBingAPI(self.getQueryBox(location))
-
-        res = self.queryBingMap(self.url)
-        for re in res['resourceSets'][0]['resources']:
-            if self.safeInsert(re):
-                if verbose is True:
-                    if printWait:
-                        time.sleep(printWait)
-                    pprint.pprint(re)
-                if self.log:
-                    self.logfile.write(pprint.pformat(re))
-
-    def encode(self, latitude, longitude, precision=12):
+        names = ['point', 'toPoint']
+        for name in names:
+            if name in record:
+                record[name]['geohash'] = self._encode(record[name]['coordinates'][0], record[name]['coordinates'][1])
+            
+    def _encode(self, latitude, longitude, precision=12):
         """
         Taken from: https://github.com/vinsci/geohash
         Encode a position given in float arguments latitude, longitude to
@@ -283,10 +289,38 @@ class Helios:
                 ch = 0
         return ''.join(geohash)
     
-    def autoLoading(self, length = 1800, session = 10, verbose = False, printWait = None, location = None):
+    def loadMapData(self, verbose=False, printWait=None, location=None):
+        """
+        Load Traffic Data from Bing Map API once
+        
+        Args:
+            verbose (bool, optional): print record details
+            printWait (int, optional): pause seconds when printing each record
+            location (tuple): the location box for querying
+        """
+
+        if not location:
+            self._loadBingAPI(self._getQueryBox(self.loc))
+        else:
+            self._loadBingAPI(self._getQueryBox(location))
+
+        res = self._queryBingMap(self.url)
+        for re in res['resourceSets'][0]['resources']:
+            self._modifyRecord(re)
+            if self._safeInsert(re):
+                if verbose is True:
+                    if printWait:
+                        time.sleep(printWait)
+                    pprint.pprint(re)
+                if self.log:
+                    self.logfile.write(pprint.pformat(re))
+        print("Finished writing data")
+    
+    def autoLoading(self, length=1800, session=10, verbose=False, printWait=None, location=None):
         """
         Load Traffic Data from Bing Map API periodically
         DEFAULT: update collection every half an hour, last 5 hours
+        
         Args:
             length (int, optional): # of seconds pause for each try 
             session (int, optional): # of tries to query data from Bing Map API
@@ -298,11 +332,13 @@ class Helios:
             self.loadMapData(verbose, printWait, location)
             time.sleep(length)
             session -= 1
+        print("Finished writing data")
 
     def retrieveCol(self):
         """
         Return the collection of Helios
         This is the MAIN OUTGOING INTERFACE
+        
         Returns:
             TYPE: Description
         """
@@ -314,7 +350,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-f', action = 'store_true', default = False, \
                     dest = 'firstTimeSetUp', \
-                    help = 'First Time Set Up, Cleaning up database and collection')
+                    help = 'First Time Set Up, Cleaning up database and collections inside')
 
     parser.add_argument('-c', action = 'store_true', default = False, \
                     dest = 'confirm', \
@@ -328,33 +364,41 @@ if __name__ == "__main__":
                     dest = 'log', \
                     help = 'store log file into ./log')
 
-    parser.add_argument('-ld', "-load", action = 'store_true', default = False, \
+    parser.add_argument('-ld', '-load', action = 'store_true', default = False, \
                     dest = 'loadMapData', \
                     help = 'Load Traffic Data from Bing Map API once')
 
-    parser.add_argument('-al', "-autoload", action = 'store_true', default = False, \
+    parser.add_argument('-al', '-autoload', action = 'store_true', default = False, \
                     dest = 'autoLoading', \
                     help = 'Load Traffic Data from Bing Map API periodically')
 
-    parser.add_argument("-length", "-l", \
-                    dest = "length", default = 1800, type = int, \
-                    help = "# of seconds pause for each query fetch")
+    parser.add_argument('-length', '-l', \
+                    dest = 'length', default = 1800, type = int, \
+                    help = '# of seconds pause for each query fetch')
 
-    parser.add_argument("-session", "-s", \
-                    dest = "session", default = 10, type = int, \
-                    help = "# of fetches to query data from Bing Map API")
+    parser.add_argument('-session', '-s', \
+                    dest = 'session', default = 10, type = int, \
+                    help = '# of fetches to query data from Bing Map API')
 
-    parser.add_argument("-printwait", "-p", \
-                    dest = "printWait", default = 5, type = int, \
-                    help = "# of seconds pause for displaying traffic details")
+    parser.add_argument('-printwait', '-p', \
+                    dest = 'printWait', default = 5, type = int, \
+                    help = '# of seconds pause for displaying traffic details')
 
-    parser.add_argument("-location", "-loc", \
-                    dest = "location", default = "denver", type = str, \
-                    help = "the location for querying, could be tuple (latitude, longitude) or city name")
+    parser.add_argument('-location', '-loc', \
+                    dest = 'location', default = 'denver', type = str, \
+                    help = 'The location for querying, could be tuple (latitude, longitude) or city name')
+
+    parser.add_argument('-dbName', '-db', \
+                    dest = 'dbName', default = 'Helios', type = str, \
+                    help = 'Database name for querying')
+
+    parser.add_argument('-colName', '-col', \
+                    dest = 'colName', default = 'TrafficData', type = str, \
+                    help = 'Collection name for querying')
 
     args = parser.parse_args()
     
-    helios = Helios(args.firstTimeSetUp, args.confirm, args.log)
+    helios = Helios(args.firstTimeSetUp, args.confirm, args.log, args.dbName, args.colName)
     if args.loadMapData:
         helios.loadMapData(args.verbose, args.printWait, args.location)
     if args.autoLoading:
