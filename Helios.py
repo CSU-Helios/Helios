@@ -296,7 +296,8 @@ class Helios:
             printWait (int, optional): pause seconds when printing each record
             location (tuple): the location box for querying
         """
-
+        count = 0
+        print("Loading data from", location)
         if not location:
             self._loadBingAPI(self._getQueryBox(self.loc))
         else:
@@ -306,13 +307,14 @@ class Helios:
         for re in res['resourceSets'][0]['resources']:
             self._modifyRecord(re)
             if self._safeInsert(re):
+                count += 1
                 if verbose is True:
                     if printWait:
                         time.sleep(printWait)
                     pprint.pprint(re)
                 if self.log:
                     self.logfile.write(pprint.pformat(re))
-        print("Finished writing data")
+        print("Finished writing", count,  "new records")
     
     def autoLoading(self, length=1800, session=10, verbose=False, printWait=None, location=None):
         """
@@ -370,31 +372,40 @@ if __name__ == "__main__":
                     dest = 'autoLoading', \
                     help = 'Load Traffic Data from Bing Map API periodically')
 
-    parser.add_argument('-length', '-l', \
+    parser.add_argument('-l', '-length', \
                     dest = 'length', default = 1800, type = int, \
                     help = '# of seconds pause for each query fetch')
 
-    parser.add_argument('-session', '-s', \
+    parser.add_argument('-s', '-session', \
                     dest = 'session', default = 10, type = int, \
                     help = '# of fetches to query data from Bing Map API')
 
-    parser.add_argument('-printwait', '-p', \
+    parser.add_argument('-p', '-printwait', \
                     dest = 'printWait', default = 5, type = int, \
                     help = '# of seconds pause for displaying traffic details')
 
-    parser.add_argument('-location', '-loc', \
-                    dest = 'location', default = 'denver', type = str, \
+    parser.add_argument('-loc', '-location', \
+                    dest = 'location', default = 'denver', type = str, nargs='+',\
                     help = 'The location for querying, could be tuple (latitude, longitude) or city name')
 
-    parser.add_argument('-dbName', '-db', \
-                    dest = 'dbName', default = 'Helios', type = str, \
+    parser.add_argument('-db', '-dbName', \
+                    dest = 'dbName', default = 'Helios', type = str, nargs='+',\
                     help = 'Database name for querying')
 
-    parser.add_argument('-colName', '-col', \
-                    dest = 'colName', default = 'TrafficData', type = str, \
+    parser.add_argument('-col', '-colName', \
+                    dest = 'colName', default = 'TrafficData', type = str, nargs='+',\
                     help = 'Collection name for querying')
 
     args = parser.parse_args()
+    args.location = ' '.join(args.location) if isinstance(args.location, list) else args.location
+    args.dbName = ' '.join(args.dbName) if isinstance(args.dbName, list) else args.dbName
+    args.colName = ' '.join(args.colName) if isinstance(args.colName, list) else args.colName
+
+    print('-' * 50)
+    for arg in vars(args):
+        print ('{:15}'.format(arg), '\t', getattr(args, arg))
+    print('-' * 50)
+    # print(args.location)
     
     helios = Helios(args.firstTimeSetUp, args.confirm, args.log, args.dbName, args.colName)
     if args.loadMapData:
