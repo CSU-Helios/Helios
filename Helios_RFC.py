@@ -41,11 +41,11 @@ class Helios_RFC:
             today = datetime.utcnow().date()
             prediction_time = datetime(today.year, today.month, today.day, hour)
         for loc_num in self.locations:
-            s = "/Date" + str(self.time_to_millis(prediction_time)) + ")/"
+            s = "/Date(" + str(int(self.time_to_millis(prediction_time))) + ")/"
             prediction = {
                 'incidentId': int(random.random() * 10000000),
-                'point': self.locations[loc_num],
-                'toPoint': self.locations[loc_num],
+                'point': {'geohash': self.locations[loc_num]},
+                'toPoint': {'geohash': self.locations[loc_num]},
                 'start': s,
                 'severity': int(self._predict(loc_num, hour)),  # number of incidents at geohash
                 'projection': True,
@@ -106,7 +106,7 @@ class Helios_RFC:
         self.log("_get_db_data")
 
         data = []
-        cursor = self.helios.col.find({"projection": {"$exists": False}})
+        cursor = self.helios.col.find()
         for entry in cursor:
             element = {
                 'start': self.millis_to_time(int(entry['start'][6:-2])),
