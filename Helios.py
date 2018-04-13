@@ -226,18 +226,20 @@ class Helios:
             locationBox (LeftLat, BotLong, RightLat, TopLong)
         """
         longitude, latitude = 0, 0
-        try:
-            longitude, latitude = make_tuple(location)
-            print(longitude, latitude)
-        except ValueError: 
-            cities = json.load(open(self.citiesFileName))
-            cityNames = [city["city"].lower() for city in cities]
-            if location.lower() in cityNames:
-                idx = cityNames.index(location.lower())
-                longitude = int(cities[idx]["longitude"])
-                latitude = int(cities[idx]["latitude"])
-            else:
-                raise Exception("Could not recognize city name")
+        # Temporarily remove support for tuple, cause it raise error
+        # when parsing "New York" (treat it as tuple while it doesn't)
+        # try:
+        #     longitude, latitude = make_tuple(location)
+        #     print(longitude, latitude)
+        # except ValueError: 
+        cities = json.load(open(self.citiesFileName))
+        cityNames = [city["city"].lower() for city in cities]
+        if location.lower() in cityNames:
+            idx = cityNames.index(location.lower())
+            longitude = int(cities[idx]["longitude"])
+            latitude = int(cities[idx]["latitude"])
+        else:
+            raise Exception("Could not recognize city name")
         return (latitude - 3, longitude - 3, latitude + 3, longitude + 3)
 
     def _modifyRecord(self, record):
