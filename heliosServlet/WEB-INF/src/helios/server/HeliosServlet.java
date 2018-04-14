@@ -1,9 +1,9 @@
 package helios.server;
 
 import java.io.BufferedReader;
-
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Vector;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -54,13 +54,18 @@ public class HeliosServlet extends HttpServlet {
 		} catch (IOException ie) {
 			System.out.println("Failed to retrieve data from server request");
 		}
+		String testStr = "{\"geohash\":[\"dr65\"],\"timestamp\":{\"from\":\"1523110008000\"},\"zoomLevel\":\"heatPoints\",\"numLimit\":\"100\"}";
 		JsonReader jsonReader = Json.createReader(new StringReader(sb.toString()));
 		JsonObject jsonObj = null;
 		try{
 			jsonObj = jsonReader.readObject();
 		} catch (JsonParsingException jpe){
 			response.getWriter().write("Not a valid json query \n\n");
-			String sampleInput = "{\"geohash\":[\"9xh1\",\"9xh2\"],\"timestamp\":{\"from\":\"1522118500000\"},\"zoomLevel\":\"heatPoints\",\"numLimit\":\"100\"}\n\n";
+			
+			response.getWriter().write("Json Query Received \n");
+			response.getWriter().write(sb.toString() + "\n\n");
+			
+			String sampleInput = "{\"geohash\":[\"9xh1\",\"9xh2\"],\"timestamp\":{\"from\":\"1523110008000\", \"to\":\"1523122318000\"},\"zoomLevel\":\"heatPoints\",\"numLimit\":\"100\"}\n\n";
 			String sampleOutput = "{\"_id\":{\"$oid\":\"5abaf1093ed8c5f591c46106\"},\"point\":{\"geohash\":\"9xh2zh8p27z0\"},\"severity\":2,\"toPoint\":{\"geohash\":\"9xh8b8kwfvgr\"}}\n\n";
 			response.getWriter().write("A sample input should be:\n" + sampleInput);
 			response.getWriter().write("A sample output would be:\n" + sampleOutput);
@@ -74,10 +79,14 @@ public class HeliosServlet extends HttpServlet {
         response.setHeader("Cache-Control", "no-cache");
         
         JsonArray recArr = javamongo.queryCollectionRetJson(jsonObj);
-		for (JsonValue jsonValue : recArr) {
-		    System.out.println(jsonValue);
-		    populateWithJson(response, jsonValue);
-		}
+        String res = populateWithJson(recArr);
+        response.setContentType("text/x-json;charset=UTF-8");           
+        response.setHeader("Cache-Control", "no-cache");
+        try {
+        	response.getWriter().write(res);
+        } catch (IOException ie) {
+        	System.out.println("Failed to send data to server response");
+        }    
 		return;
 	}
 
@@ -93,15 +102,13 @@ public class HeliosServlet extends HttpServlet {
 		javamongo.setup(spec);
 	}
 
-	private void populateWithJson(HttpServletResponse response, JsonValue jval) {
-	    if(jval != null) {
-	        response.setContentType("text/x-json;charset=UTF-8");           
-	        response.setHeader("Cache-Control", "no-cache");
-	        try {
-	             response.getWriter().write(jval.toString());
-	        } catch (IOException ie) {
-	        	System.out.println("Failed to send data to server response");
-	        }                               
-	    }
+	private String populateWithJson(JsonArray jsonArr) {
+		Vector<String> vec = new Vector<>();
+		for (JsonValue jsonValue : jsonArr) {
+			vec.add(jsonValue.toString());
+		    System.out.println(jsonValue);
+		}
+		return vec.toString();
+	    
 	}
 }
