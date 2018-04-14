@@ -1,20 +1,26 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
-import random
 import json
+import pymongo
 from sklearn.ensemble import RandomForestClassifier
 
-import Helios
 
 class Helios_RFC:
 
     def __init__(self):
+        self.host = "localhost"
+        self.port = 27017
+        self.pred_database_name = "Helios_Test"
+        self.pred_collection_name = "RF_prediction"
+        self.helios_collection_name = "Helios_Traffic_Data"
         self._precision = 7
         self._debug = False
-        self.helios = Helios.Helios()
+
+        self.pred_col, self.helios_col = self.setup_mongo()
         self.data = self._get_db_data()
         self.rfc = RandomForestClassifier()
         self.locations = self._get_loc_set()
+        self.X_train, self.y_train, self.X_test, self.y_test = self._get_train_test_data()
 
     def train(self):
         """
@@ -22,41 +28,48 @@ class Helios_RFC:
         _get_train_array()
         """
         self.log("train")
+        self.rfc.fit(self.X_train, np.ravel(self.y_train))
 
-        X_train, y_train = self._get_train_data()
-        self.rfc.fit(X_train, np.ravel(y_train))
+    def test(self):
+        self.log("test")
+        return self.rfc.score(self.X_test, self.y_test)
 
-    def predict_all_at_specified_time(self, prediction_time):
+    def predict_all_one_day_into_the_future(self):
         """
         returns an array that contains arrays that each have a geohash, timestamp and
-        predicted number of incidents
+        predicted number of incidents for all hours of the day one day into the future
         """
         self.log("predict_all_at_specified_time")
 
         predictions = []
-        if type(prediction_time) == datetime:
-            hour = datetime.hour
-        else:
-            hour = prediction_time
-            today = datetime.utcnow().date()
-            prediction_time = datetime(today.year, today.month, today.day, hour)
+        today = datetime.utcnow().date()
+        prediction_time = datetime(today.year, today.month, today.day + 1)
         for loc_num in self.locations:
-            s = "/Date(" + str(int(self.time_to_millis(prediction_time))) + ")/"
-            prediction = {
-                'incidentId': int(random.random() * 10000000),
-                'point': {'geohash': self.locations[loc_num]},
-                'toPoint': {'geohash': self.locations[loc_num]},
-                'start': s,
-                'severity': int(self._predict(loc_num, hour)),  # number of incidents at geohash
-                'projection': True,
-            }
-            predictions.append(prediction)
+            for hour in range(1, 25):
+                start_date = "/Date(" + str(int(self.time_to_millis(prediction_time))) + ")/"
+                end_date = "/Date(" + str(int(self.time_to_millis(prediction_time
+                                                                  + timedelta(seconds=60*60)))) + ")/"
+                incidents = int(self._predict(loc_num, hour))
+                if incidents:
+                    prediction = {
+                        'geohash': self.locations[loc_num],
+                        'start': start_date,
+                        'end': end_date,
+                        'incidents': incidents,
+                    }
+                    predictions.append(prediction)
         return predictions
 
     def send_predictions_to_mongo(self, predictions):
         self.log("send_predictions_to mongo" + "First prediction:" + str(predictions[0]))
+        self.pred_col.drop()
         for prediction in predictions:
-            self.helios.safeInsert(json.loads(json.dumps(prediction)))
+            self.pred_col.insert_one(json.loads(json.dumps(prediction)))
+
+    def setup_mongo(self):
+        client = pymongo.MongoClient(self.host, self.port)
+        db = client[self.pred_database_name]
+        return db[self.pred_collection_name], db[self.helios_collection_name]
     
     def _get_loc_set(self):
         """
@@ -72,7 +85,7 @@ class Helios_RFC:
 
     def _get_data_by_hour(self, geoHash):
         """
-        private method that At every location make fill an array that represents hours in a
+        private method that At every location makes an array that represents hours in a
         day with the number of incidents that occurred within that hour
         """
         self.log("get_data_by_hour")
@@ -83,7 +96,7 @@ class Helios_RFC:
                 d[item['start'].hour & 24] += 1
         return d
 
-    def _get_train_data(self):
+    def _get_train_test_data(self):
         """
         private method that creates arrays used to train RFC using data from self.data,
         additional data can be added in the future
@@ -92,11 +105,17 @@ class Helios_RFC:
 
         X_train = []
         y_train = []
-        for loc_num in self.locations:
+        X_test = []
+        y_test = []
+        for i, loc_num in enumerate(self.locations):
             for hour, incidents in enumerate(self._get_data_by_hour(self.locations[loc_num])):
-                X_train.append([loc_num, hour])
-                y_train.append([incidents])
-        return X_train, y_train
+                if i % 5 == 0:
+                    X_test.append([loc_num, hour])
+                    y_test.append([incidents])
+                else:
+                    X_train.append([loc_num, hour])
+                    y_train.append([incidents])
+        return X_train, y_train, X_test, y_test
 
     def _get_db_data(self):
         """
@@ -106,14 +125,14 @@ class Helios_RFC:
         self.log("_get_db_data")
 
         data = []
-        cursor = self.helios.col.find()
+        cursor = self.helios_col.find()
         for entry in cursor:
             element = {
                 'start': self.millis_to_time(int(entry['start'][6:-2])),
-                'end': self.millis_to_time(int(entry['end'][6:-2])),
-                'type': entry['type'],
-                'severity': entry['severity'],
-                'roadClosed': entry['roadClosed'],
+                # 'end': self.millis_to_time(int(entry['end'][6:-2])),
+                # 'type': entry['type'],
+                # 'severity': entry['severity'],
+                # 'roadClosed': entry['roadClosed'],
                 'geoHash': entry['point']['geohash'][:7]
             }
             data.append(element)
@@ -127,11 +146,6 @@ class Helios_RFC:
         self.log("_predict()")
 
         return self.rfc.predict([[geohash_num, hour]])[0]
-
-    def _query_bing(self, location):
-        """Only used to get test data on personal computer"""
-        self.log("query_bing")
-        self.helios.loadMapData(False, None, location)
 
     def millis_to_time(self, millis):
         """
@@ -156,12 +170,12 @@ class Helios_RFC:
 
 
 if __name__ == "__main__":
-    p = Helios_RFC()
-    p.train()
-    idata = p.predict_all_at_specified_time(8)
-    print("test prediction: " + str(idata[0]))
-
-    p.send_predictions_to_mongo(idata)
+    H_rfc = Helios_RFC()
+    H_rfc.train()
+    pred_data = H_rfc.predict_all_one_day_into_the_future()
+    H_rfc.send_predictions_to_mongo(pred_data)
+    score = H_rfc.test()
+    print("Score:", score)
     
 
 
