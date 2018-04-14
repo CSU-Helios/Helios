@@ -1,4 +1,8 @@
 #!/bin/bash
+MONGODBPATH=data/db
+MONGODBLOG=log/mongodb.log
+MONGODBPORT=27017
+
 if [ -z "$1" ] ; then
 	echo -e "[-mongod]"
 	echo -e "\t[-start]\t: start mongod at localhost 27017"
@@ -19,10 +23,11 @@ fi
 	
 if [ "$1" == "-mongod" ] ; then
     if [ "$2" == "-start" ] ; then
-        softwares/mongodb-linux-x86_64-3.6.2/bin/mongod -dbpath data/db --logpath log/mongodb.log &
+        softwares/mongodb-linux-x86_64-3.6.2/bin/mongod --dbpath $MONGODBPATH --logpath $MONGODBLOG --port $MONGODBPORT &
         echo -e "******************************************************************************************"
-        echo -e "Starting mongod at PORT 27017, dbpath=/data/db, logpath=log/mongodb.log 64-bit"
+        echo -e "Starting mongod at PORT $MONGODBPORT, dbpath=$MONGODBPATH, logpath=$MONGODBLOG 64-bit"
         echo -e "******************************************************************************************"
+	cat $MONGODBLOG
     fi
 
     if [ "$2" == "-stop" ] ; then
@@ -33,14 +38,14 @@ if [ "$1" == "-mongod" ] ; then
     fi
 
     if [ "$2" == "-show" ] ; then
-        ps -edaf | grep mongo | grep -v grep
+        ps -xa | grep mongod
     fi
 fi
 
 
 if [ "$1" == "-mongo" ] ; then
     if [ "$2" == "-start" ] ; then
-        mongo
+        mongo --port $MONGODBPORT
     fi
 fi
 
